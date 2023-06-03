@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:padding="16dp">
+
+    <org.opencv.android.JavaCameraView
+        android:id="@+id/camera_view"
+        android:layout_width="388dp"
+        android:layout_height="380dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/transmitter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/camera_view"
+        android:layout_marginTop="16dp"
+        android:hapticFeedbackEnabled="true"
+        android:text="Transmitter" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/start"
+        android:layout_width="108dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/camera_view"
+        android:layout_marginTop="65dp"
+        android:hapticFeedbackEnabled="true"
+        android:text="Start" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/end"
+        android:layout_width="108dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/camera_view"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="false"
+        android:layout_marginTop="64dp"
+        android:layout_marginRight="-1dp"
+        android:hapticFeedbackEnabled="true"
+        android:rotationX="0"
+        android:text="End" />
+
+    <TextView
+        android:id="@+id/label_field"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_below="@id/transmitter"
+        android:layout_marginTop="53dp"
+        android:background="#7D8AB8"
+        android:text=""
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>
