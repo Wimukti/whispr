@@ -77,7 +77,6 @@ public class Receiver extends CameraActivity {
                 long currentTime = System.currentTimeMillis();
 
                 // find max contours is area is greater than 400000
-
                 for (MatOfPoint contour : contours) {
                     double area = contourArea(contour);
                     if (area > 400000) {
@@ -171,8 +170,7 @@ public class Receiver extends CameraActivity {
         }
     }
 
-
-
+    // Decode Morse code
     private String decodeMorseCode(String morseCode) {
         String[] morseCodes = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", " "};
         String[] characters = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", " "};
@@ -186,7 +184,6 @@ public class Receiver extends CameraActivity {
         }
         return builder.toString();
     }
-
 
     @Override
     protected void onResume() {
@@ -234,3 +231,25 @@ public class Receiver extends CameraActivity {
         }
     }
 }
+
+/*
+    Here is a breakdown of the code:
+    - The code defines a class named `Receiver` in the package `com.example.vlc`.
+    - The class extends the `CameraActivity` class provided by the OpenCV library.
+    - The class has several member variables including `cameraBridgeViewBase`, `labelField`, and `databaseHelper`.
+    - In the `onCreate` method, the layout is set, and permissions are requested for the camera.
+    - The `cameraBridgeViewBase` is initialized and a `CvCameraViewListener2` is set on it.
+    - The listener implements several methods related to camera view callbacks.
+    - In the `onCameraFrame` method, the camera frame is processed to decode Morse code.
+    - The frame is converted to grayscale and thresholded to create a binary image.
+    - Contours are then extracted from the binary image using the `findContours` method.
+    - The code analyzes the contours to determine if a flashlight is on or off based on the number of illuminated frames.
+    - Morse code sequences are decoded from the on/off patterns of the flashlight.
+    - The decoded messages are stored in a database and displayed on a text view.
+    - The `decodeMorseCode` method is used to convert Morse code sequences to characters.
+    - The `onResume`, `onPause`, and `onDestroy` methods handle the lifecycle of the camera view.
+    - The `getPermission` method checks and requests camera permission.
+    - The `onRequestPermissionsResult` method handles the result of the permission request.
+
+    Please note that the code assumes the existence of layout resources and the `DatabaseHelper` class, which are not included in the provided code snippet.
+*/
