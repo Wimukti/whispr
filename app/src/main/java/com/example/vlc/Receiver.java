@@ -8,23 +8,16 @@ import static org.opencv.imgproc.Imgproc.contourArea;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 import static org.opencv.imgproc.Imgproc.findContours;
 import static org.opencv.imgproc.Imgproc.threshold;
-
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
-
 import org.opencv.android.CameraActivity;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +26,6 @@ import java.util.List;
 public class Receiver extends CameraActivity {
 
     CameraBridgeViewBase cameraBridgeViewBase;
-    Button button;
     TextView labelField;
     DatabaseHelper databaseHelper;
 
@@ -50,13 +42,12 @@ public class Receiver extends CameraActivity {
         cameraBridgeViewBase.setCvCameraViewListener(new CameraBridgeViewBase.CvCameraViewListener2() {
             private boolean isFlashlightOn = false;
             private long prevTime = 0;
-            private int illuminatedFrameCount = 0;
-            private int darkFrameCount = 0;
-            private final StringBuilder morseCodeBuilder = new StringBuilder();
-            private int spaceCount = 0;
-            private List<String> morseCodeList = new ArrayList<>();
-            private List<String> wordList = new ArrayList<>();
-            private static final long DOT_DURATION = 40;
+            private int flashlightOnFrameCount = 0;
+            private int flashlightOffFrameCount = 0;
+            private final StringBuilder morseCodeBuffer = new StringBuilder();
+            private int blankFrameCount = 0;
+            private List<String> morseCodeSequence = new ArrayList<>();
+            private List<String> wordSequence = new ArrayList<>();
             private boolean isReceiving = false;
 
             @Override
@@ -95,34 +86,34 @@ public class Receiver extends CameraActivity {
                 }
 
                 if(isReceiving) {
-                    illuminatedFrameCount++;
+                    flashlightOnFrameCount++;
                     isFlashlightOn = true;
-                    darkFrameCount = 0;
-                    spaceCount = 0;
+                    flashlightOffFrameCount = 0;
+                    blankFrameCount = 0;
                     isReceiving = false;
                 } else {
                     if(isFlashlightOn) {
-                        Log.d(illuminatedFrameCount + "", "illuminatedFrameCount: " + illuminatedFrameCount);
-                        if (illuminatedFrameCount >= 3) {
-                            morseCodeBuilder.append('-');
+                        Log.d(flashlightOnFrameCount + "", "illuminatedFrameCount: " + flashlightOnFrameCount);
+                        if (flashlightOnFrameCount >= 3) {
+                            morseCodeBuffer.append('-');
                         }
-                        else if (illuminatedFrameCount >= 1) {
-                            morseCodeBuilder.append('.');
+                        else if (flashlightOnFrameCount >= 1) {
+                            morseCodeBuffer.append('.');
                         }
-                        else morseCodeBuilder.append("");
+                        else morseCodeBuffer.append("");
                     }
                     else {
-                        if (!morseCodeBuilder.toString().equals("")) {
-                            darkFrameCount++;
-                            if (darkFrameCount >= 8) {
-                                spaceCount++;
-                                if (spaceCount >= 26) {
-                                    morseCodeBuilder.append('_');
-                                    spaceCount = 0;
+                        if (!morseCodeBuffer.toString().equals("")) {
+                            flashlightOffFrameCount++;
+                            if (flashlightOffFrameCount >= 8) {
+                                blankFrameCount++;
+                                if (blankFrameCount >= 26) {
+                                    morseCodeBuffer.append('_');
+                                    blankFrameCount = 0;
                                 }
-                                else if (spaceCount == 1 && !morseCodeBuilder.toString().endsWith("_")) {
-                                    morseCodeBuilder.append(' ');
-                                    String[] characterList = (morseCodeBuilder.toString().length() >= 6) ? morseCodeBuilder.toString().substring(6).split(" ") : new String[0];
+                                else if (blankFrameCount == 1 && !morseCodeBuffer.toString().endsWith("_")) {
+                                    morseCodeBuffer.append(' ');
+                                    String[] characterList = (morseCodeBuffer.toString().length() >= 6) ? morseCodeBuffer.toString().substring(6).split(" ") : new String[0];
                                     List<String> decodedCharacterList = new ArrayList<>();
                                     for (String character : characterList) {
                                         if (character.contains("_")) decodedCharacterList.add(" ");
@@ -137,8 +128,8 @@ public class Receiver extends CameraActivity {
                             }
                         }
                     }
-                    if (morseCodeBuilder.toString().length() == 1) prevTime = currentTime;
-                    illuminatedFrameCount = 0;
+                    if (morseCodeBuffer.toString().length() == 1) prevTime = currentTime;
+                    flashlightOnFrameCount = 0;
                     isFlashlightOn = false;
                 }
 
@@ -148,23 +139,23 @@ public class Receiver extends CameraActivity {
 
                 if (!isFlashlightOn) {
                     // Decode Morse code
-                    String morseCode = morseCodeBuilder.toString().trim();
+                    String morseCode = morseCodeBuffer.toString().trim();
                     Log.d(morseCode, "morseCode: " + morseCode);
                     if (morseCode.endsWith(" .-.-")) {
                         if (morseCode.contains("-.-.-")) {
                             morseCode = morseCode.substring(6, morseCode.length() - 5);
-                            morseCodeList = Arrays.asList(morseCode.split("_"));
-                            for (String morseCodeWord : morseCodeList) {
-                                wordList.add(decodeMorseCode(morseCodeWord));
+                            morseCodeSequence = Arrays.asList(morseCode.split("_"));
+                            for (String morseCodeWord : morseCodeSequence) {
+                                wordSequence.add(decodeMorseCode(morseCodeWord));
                             }
-                            Log.d(wordList.toString(), "wordList: " + wordList.toString());
-                            String message = String.join(" ", wordList);
+                            Log.d(wordSequence.toString(), "wordList: " + wordSequence.toString());
+                            String message = String.join(" ", wordSequence);
                             databaseHelper.insertMessage(message, false);
                             labelField.setText(message);
                         }
-                        morseCodeBuilder.setLength(0);
-                        wordList = new ArrayList<>();
-                        morseCodeList = new ArrayList<>();
+                        morseCodeBuffer.setLength(0);
+                        wordSequence = new ArrayList<>();
+                        morseCodeSequence = new ArrayList<>();
                         prevTime = 0;
                     }
                 }

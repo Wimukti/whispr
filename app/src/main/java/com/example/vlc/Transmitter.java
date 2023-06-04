@@ -1,17 +1,13 @@
 package com.example.vlc;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import java.util.Arrays;
@@ -97,7 +93,6 @@ public class Transmitter extends AppCompatActivity {
     }
 
     private void transmitMorseCode(String morseCode) {
-        Handler handler = new Handler();
         String morseCodeWithEnd = "-.-.- " + morseCode + " .-.-";
         long dotDuration = dotSpeedValue;
         for (int i = 0; i < morseCodeWithEnd.length(); i++) {
