@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="20dip"
+    android:layout_marginTop="10dip"
+    android:layout_marginRight="20dip"
+    android:layout_marginBottom="10dip"
+    android:background="@drawable/received_message_tile_shape"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/receivedMessageTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="30dp"
+        android:padding="8dp"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/receivedTimestampTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-20dip"
+        android:padding="8dp"
+        android:textAlignment="textEnd"
+        android:textSize="12sp" />
+
+</LinearLayout>

@@ -30,26 +30,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends CameraActivity {
+public class Receiver extends CameraActivity {
 
     CameraBridgeViewBase cameraBridgeViewBase;
     Button button;
-    Button start;
-    Button end;
     TextView labelField;
+    DatabaseHelper databaseHelper;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
+        setContentView(R.layout.activity_receiver);
         getPermission();
 
         cameraBridgeViewBase = findViewById(R.id.camera_view);
-        button = findViewById(R.id.transmitter);
-        start = findViewById(R.id.start);
-        end = findViewById(R.id.end);
-        labelField = findViewById(R.id.label_field);
+        labelField = findViewById(R.id.recieved_message);
+        databaseHelper = new DatabaseHelper(this);
 
         cameraBridgeViewBase.setCvCameraViewListener(new CameraBridgeViewBase.CvCameraViewListener2() {
             private boolean isFlashlightOn = false;
@@ -132,6 +128,10 @@ public class MainActivity extends CameraActivity {
                                         if (character.contains("_")) decodedCharacterList.add(" ");
                                         decodedCharacterList.add(decodeMorseCode(character.replaceAll("_", " ")));
                                     }
+                                    if (decodedCharacterList.size() > 4) {
+                                        String message = String.join("", decodedCharacterList);
+                                        databaseHelper.insertMessage(message, false);
+                                    }
                                     labelField.setText(String.join("", decodedCharacterList));
                                 }
                             }
@@ -149,6 +149,7 @@ public class MainActivity extends CameraActivity {
                 if (!isFlashlightOn) {
                     // Decode Morse code
                     String morseCode = morseCodeBuilder.toString().trim();
+                    Log.d(morseCode, "morseCode: " + morseCode);
                     if (morseCode.endsWith(" .-.-")) {
                         if (morseCode.contains("-.-.-")) {
                             morseCode = morseCode.substring(6, morseCode.length() - 5);
@@ -158,7 +159,7 @@ public class MainActivity extends CameraActivity {
                             }
                             Log.d(wordList.toString(), "wordList: " + wordList.toString());
                             String message = String.join(" ", wordList);
-                            Log.d("MorseCode", "Message: " + message);
+                            databaseHelper.insertMessage(message, false);
                             labelField.setText(message);
                         }
                         morseCodeBuilder.setLength(0);
@@ -171,14 +172,6 @@ public class MainActivity extends CameraActivity {
             }
         });
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, FlashLight.class);
-                startActivity(intent);
-            }
-        });
-
         if (OpenCVLoader.initDebug()) {
             System.out.println("OpenCV loaded successfully");
             cameraBridgeViewBase.enableView();
@@ -186,6 +179,8 @@ public class MainActivity extends CameraActivity {
             System.out.println("OpenCV not loaded");
         }
     }
+
+
 
     private String decodeMorseCode(String morseCode) {
         String[] morseCodes = {".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", " "};
@@ -200,6 +195,7 @@ public class MainActivity extends CameraActivity {
         }
         return builder.toString();
     }
+
 
     @Override
     protected void onResume() {

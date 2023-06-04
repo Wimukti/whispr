@@ -11,33 +11,32 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import java.util.Arrays;
 
-public class FlashLight extends AppCompatActivity {
+public class Transmitter extends AppCompatActivity {
 
     private EditText editText;
     private Button sendButton;
-    private Button receiverButton;
-    private EditText dotSpeed;
-    private TextView labelField;
+    private SeekBar dotSpeed;
     private CameraManager cameraManager;
     private String cameraId;
-    private final int fps = 25;
+    private TextView transmissionRate;
     private long dotSpeedValue = 50;
+    DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_flash_light);
+        setContentView(R.layout.activity_transmitter);
 
         editText = findViewById(R.id.edit_text_field);
         sendButton = findViewById(R.id.send_button);
-        receiverButton = findViewById(R.id.receiver_button);
-
-        labelField = findViewById(R.id.label_field);
-        dotSpeed = findViewById(R.id.dot_speed_field);
-
+        dotSpeed = findViewById(R.id.seekBar);
+        transmissionRate = findViewById(R.id.transmission_rate);
+        databaseHelper = new DatabaseHelper(this);
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             cameraId = cameraManager.getCameraIdList()[0];
@@ -45,24 +44,26 @@ public class FlashLight extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        dotSpeed.addTextChangedListener(new TextWatcher() {
+        //Change dotSpeed using SeekBar
+        dotSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int progressChangedValue = 50;
+
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                progressChangedValue = i + 50;
+                transmissionRate.setText("Transmission Rate: " + progressChangedValue + "ms");
             }
 
             @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (!dotSpeed.getText().toString().isEmpty()) {
-                    dotSpeedValue = Long.parseLong(dotSpeed.getText().toString());
-                    if (dotSpeedValue < 50 || dotSpeedValue > 150) {
-                        dotSpeedValue = 50;
-                    }
-                }
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                dotSpeedValue = progressChangedValue;
+                transmissionRate.setText("Transmission Rate: " + dotSpeedValue + "ms");
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                dotSpeedValue = progressChangedValue;
+                transmissionRate.setText("Transmission Rate: " + dotSpeedValue + "ms");
             }
         });
 
@@ -71,16 +72,8 @@ public class FlashLight extends AppCompatActivity {
             public void onClick(View view) {
                 String message = editText.getText().toString();
                 String morseCode = encodeMorseCode(message);
-                labelField.setText(morseCode);
                 transmitMorseCode(morseCode);
-            }
-        });
-
-        receiverButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(FlashLight.this, MainActivity.class);
-                startActivity(intent);
+                databaseHelper.insertMessage(message, true);
             }
         });
     }
@@ -133,26 +126,6 @@ public class FlashLight extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        // Append end-of-message prosign to indicate the end of the transmission
-//        String endOfMessage = ".-.-";
-//        for (int i = 0; i < endOfMessage.length(); i++) {
-//            char character = endOfMessage.charAt(i);
-//            long dashDuration = 3 * dotDuration;
-//            switch (character) {
-//                case '.':
-//                    turnOnFlashlight(dotDuration);
-//                    break;
-//                case '-':
-//                    turnOnFlashlight(dashDuration);
-//                    break;
-//            }
-//            try {
-//                long letterSpaceDuration = 3 * dotDuration;
-//                Thread.sleep(letterSpaceDuration);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
     }
 
     private void turnOnFlashlight(long duration) {
