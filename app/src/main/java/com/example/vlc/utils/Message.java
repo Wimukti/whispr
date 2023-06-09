@@ -1,10 +1,9 @@
-package com.example.vlc;
-
+package com.example.vlc.utils;
 public class Message {
     private final long id;
     private final long timestamp;
     private final String content;
-    private boolean isSent;
+    private final boolean isSent;
 
     public Message(long id, long timestamp, String content, boolean isSent) {
         this.id = id;
@@ -27,5 +26,15 @@ public class Message {
 
     public boolean isSent() {
         return isSent;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "id=" + id +
+                ", timestamp=" + timestamp +
+                ", content='" + content + '\'' +
+                ", isSent=" + isSent +
+                '}';
     }
 }

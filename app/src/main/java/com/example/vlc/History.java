@@ -3,20 +3,18 @@ import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.sql.Date;
-import java.text.SimpleDateFormat;
+import com.example.vlc.utils.DatabaseHelper;
+import com.example.vlc.utils.Message;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
+import static com.example.vlc.utils.Constants.*;
 
 public class History extends AppCompatActivity {
 
@@ -46,13 +44,13 @@ public class History extends AppCompatActivity {
 
     private void retrieveMessages() {
         SQLiteDatabase db = databaseHelper.getReadableDatabase();
-        Cursor cursor = db.query(DatabaseHelper.TABLE_NAME, null, null, null, null, null, null);
+        Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null, null);
 
         while (cursor.moveToNext()) {
-            @SuppressLint("Range") long id = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.COLUMN_ID));
-            @SuppressLint("Range") String content = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_CONTENT));
-            @SuppressLint("Range") long timestamp = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.COLUMN_TIMESTAMP));
-            @SuppressLint("Range") boolean isSent = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_IS_SENT)) == 1;
+            @SuppressLint("Range") long id = cursor.getLong(cursor.getColumnIndex(COLUMN_ID));
+            @SuppressLint("Range") String content = cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT));
+            @SuppressLint("Range") long timestamp = cursor.getLong(cursor.getColumnIndex(COLUMN_TIMESTAMP));
+            @SuppressLint("Range") boolean isSent = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_SENT)) == 1;
 
             Message message = new Message(id, timestamp, content, isSent);
             messageList.add(message);

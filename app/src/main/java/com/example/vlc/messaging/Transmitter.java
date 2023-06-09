@@ -1,4 +1,6 @@
-package com.example.vlc;
+package com.example.vlc.messaging;
+
+import static com.example.vlc.utils.Constants.*;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
@@ -10,17 +12,19 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import com.example.vlc.R;
+import com.example.vlc.utils.DatabaseHelper;
+
 import java.util.Arrays;
 
 public class Transmitter extends AppCompatActivity {
 
     private EditText editText; // EditText for user input
-    private Button sendButton; // Button to send the message
-    private SeekBar dotSpeed; // SeekBar to adjust the dot speed
     private CameraManager cameraManager; // Manages the camera functionality
     private String cameraId; // ID of the camera
     private TextView transmissionRate; // Displays the transmission rate
-    private long dotSpeedValue = 50; // Current dot speed in milliseconds
+    private long dotSpeedValue = DOT_SPEED_INITIAL_VALUE; // Current dot speed in milliseconds
     DatabaseHelper databaseHelper; // Helper class for database operations
 
     @Override
@@ -28,9 +32,12 @@ public class Transmitter extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transmitter);
 
+        // Button to send the message
+        Button sendButton = findViewById(R.id.send_button); // Reference to the send button in the layout
+        // SeekBar to adjust the dot speed
+        SeekBar dotSpeed = findViewById(R.id.seekBar); // Reference to the SeekBar in the layout
+
         editText = findViewById(R.id.edit_text_field); // Reference to the EditText in the layout
-        sendButton = findViewById(R.id.send_button); // Reference to the send button in the layout
-        dotSpeed = findViewById(R.id.seekBar); // Reference to the SeekBar in the layout
         transmissionRate = findViewById(R.id.transmission_rate); // Reference to the TextView for transmission rate
         databaseHelper = new DatabaseHelper(this); // Initialize the database helper
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE); // Get the camera manager service
@@ -43,24 +50,27 @@ public class Transmitter extends AppCompatActivity {
 
         // Change dotSpeed using SeekBar
         dotSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            int progressChangedValue = 50;
+            int progressChangedValue = DOT_SPEED_INITIAL_VALUE;
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                progressChangedValue = i + 50;
-                transmissionRate.setText("Transmission Rate: " + progressChangedValue + "ms");
+                progressChangedValue = i + DOT_SPEED_INITIAL_VALUE;
+                String transmissionRateMs = "Transmission Rate: " + progressChangedValue + "ms";
+                transmissionRate.setText(transmissionRateMs);
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 dotSpeedValue = progressChangedValue;
-                transmissionRate.setText("Transmission Rate: " + dotSpeedValue + "ms");
+                String dotValueSpeed = "Transmission Rate: " + dotSpeedValue + "ms";
+                transmissionRate.setText(dotValueSpeed);
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 dotSpeedValue = progressChangedValue;
-                transmissionRate.setText("Transmission Rate: " + dotSpeedValue + "ms");
+                String dotSpeedValueMs = "Transmission Rate: " + dotSpeedValue + "ms";
+                transmissionRate.setText(dotSpeedValueMs);
             }
         });
 
@@ -96,21 +106,21 @@ public class Transmitter extends AppCompatActivity {
 
     // Transmit the Morse code using flashlight
     private void transmitMorseCode(String morseCode) {
-        String morseCodeWithEnd = "-.-.- " + morseCode + " .-.-";
+        String morseCodeWithEnd = STARTING_MORSE_CODE + morseCode + ENDING_MORSE_CODE;
         long dotDuration = dotSpeedValue;
         for (int i = 0; i < morseCodeWithEnd.length(); i++) {
             char character = morseCodeWithEnd.charAt(i);
-            long dashDuration = 3 * dotDuration;
+            long dashDuration = DASH_DURATION_MULTIPLIER * dotDuration;
             switch (character) {
-                case '.':
+                case DOT:
                     turnOnFlashlight(dotDuration); // Turn on the flashlight for dot duration
                     break;
-                case '-':
+                case DASH:
                     turnOnFlashlight(dashDuration); // Turn on the flashlight for dash duration
                     break;
-                case ' ':
+                case SPACE:
                     try {
-                        long wordSpaceDuration = 7 * dotDuration;
+                        long wordSpaceDuration = SPACE_DURATION_MULTIPLIER * dotDuration;
                         Thread.sleep(wordSpaceDuration); // Pause for word space duration
                     } catch (InterruptedException e) {
                         e.printStackTrace();

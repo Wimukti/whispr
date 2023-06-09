@@ -5,6 +5,9 @@ import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.vlc.messaging.Receiver;
+import com.example.vlc.messaging.Transmitter;
+
 public class Home extends AppCompatActivity {
 
     @Override

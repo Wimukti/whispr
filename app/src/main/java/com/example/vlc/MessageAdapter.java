@@ -1,5 +1,8 @@
 package com.example.vlc;
 
+import static com.example.vlc.utils.Constants.VIEW_TYPE_RECEIVED;
+import static com.example.vlc.utils.Constants.VIEW_TYPE_SENT;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.vlc.utils.Message;
+
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -15,10 +20,7 @@ import java.util.Locale;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<Message> messages;
-
-    private static final int VIEW_TYPE_SENT = 1;
-    private static final int VIEW_TYPE_RECEIVED = 2;
+    private final List<Message> messages;
 
     public MessageAdapter(List<Message> messages) {
         this.messages = messages;
@@ -71,8 +73,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     // ViewHolder for sent messages
     public class SentMessageViewHolder extends RecyclerView.ViewHolder {
-        private TextView sentTextViewContent;
-        private TextView receivedTextViewTimestamp;
+        private final TextView sentTextViewContent;
+        private final TextView receivedTextViewTimestamp;
 
         public SentMessageViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -88,8 +90,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     // ViewHolder for received messages
     public class ReceivedMessageViewHolder extends RecyclerView.ViewHolder {
-        private TextView receivedTextViewContent;
-        private TextView receivedTextViewTimestamp;
+        private final TextView receivedTextViewContent;
+        private final TextView receivedTextViewTimestamp;
 
         public ReceivedMessageViewHolder(@NonNull View itemView) {
             super(itemView);

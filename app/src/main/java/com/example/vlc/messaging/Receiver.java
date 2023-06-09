@@ -1,5 +1,6 @@
-package com.example.vlc;
+package com.example.vlc.messaging;
 
+import static com.example.vlc.utils.Constants.*;
 import static org.opencv.imgproc.Imgproc.CHAIN_APPROX_SIMPLE;
 import static org.opencv.imgproc.Imgproc.COLOR_RGBA2GRAY;
 import static org.opencv.imgproc.Imgproc.RETR_TREE;
@@ -13,6 +14,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+
+import com.example.vlc.R;
+import com.example.vlc.utils.DatabaseHelper;
+
 import org.opencv.android.CameraActivity;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.OpenCVLoader;
@@ -25,13 +30,14 @@ import java.util.List;
 
 public class Receiver extends CameraActivity {
 
-    CameraBridgeViewBase cameraBridgeViewBase;
-    TextView labelField;
-    DatabaseHelper databaseHelper;
+    private CameraBridgeViewBase cameraBridgeViewBase;
+    private TextView labelField;
+    private DatabaseHelper databaseHelper;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_receiver);
         getPermission();
 
@@ -46,9 +52,9 @@ public class Receiver extends CameraActivity {
             private int flashlightOffFrameCount = 0;
             private final StringBuilder morseCodeBuffer = new StringBuilder();
             private int blankFrameCount = 0;
-            private List<String> morseCodeSequence = new ArrayList<>();
             private List<String> wordSequence = new ArrayList<>();
-            private boolean isReceiving = false;
+            private List<MatOfPoint> contours;
+            private long currentTime;
 
             @Override
             public void onCameraViewStarted(int width, int height) {
@@ -60,76 +66,21 @@ public class Receiver extends CameraActivity {
 
             @Override
             public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-                // Convert input frame to grayscale
                 Mat gray = new Mat();
                 cvtColor(inputFrame.rgba(), gray, COLOR_RGBA2GRAY);
-
-                // Apply threshold to convert to binary image
+                // Convert input frame to grayscale
                 Mat binary = new Mat();
-                threshold(gray, binary, 145, 255, THRESH_BINARY);
-
-                // Find contours in the binary image
-                List<MatOfPoint> contours = new ArrayList<>();
-
+                threshold(gray, binary, LOWER_BINARY_THRESHOLD, HIGHER_BINARY_THRESHOLD, THRESH_BINARY);
+                // Apply threshold to convert to binary image
+                contours = new ArrayList<>();
                 Mat hierarchy = new Mat();
-                findContours(binary, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+                findContours(binary, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);             // Find contours in the binary image
+                currentTime = System.currentTimeMillis();
 
-                long currentTime = System.currentTimeMillis();
-
-                // find max contours is area is greater than 400000
-                for (MatOfPoint contour : contours) {
-                    double area = contourArea(contour);
-                    if (area > 400000) {
-                        isReceiving = true;
-                    }
-                }
-
-                if(isReceiving) {
-                    flashlightOnFrameCount++;
-                    isFlashlightOn = true;
-                    flashlightOffFrameCount = 0;
-                    blankFrameCount = 0;
-                    isReceiving = false;
+                if(isReceivingLight()) {
+                    handleIsReceiving();
                 } else {
-                    if(isFlashlightOn) {
-                        Log.d(flashlightOnFrameCount + "", "illuminatedFrameCount: " + flashlightOnFrameCount);
-                        if (flashlightOnFrameCount >= 3) {
-                            morseCodeBuffer.append('-');
-                        }
-                        else if (flashlightOnFrameCount >= 1) {
-                            morseCodeBuffer.append('.');
-                        }
-                        else morseCodeBuffer.append("");
-                    }
-                    else {
-                        if (!morseCodeBuffer.toString().equals("")) {
-                            flashlightOffFrameCount++;
-                            if (flashlightOffFrameCount >= 8) {
-                                blankFrameCount++;
-                                if (blankFrameCount >= 26) {
-                                    morseCodeBuffer.append('_');
-                                    blankFrameCount = 0;
-                                }
-                                else if (blankFrameCount == 1 && !morseCodeBuffer.toString().endsWith("_")) {
-                                    morseCodeBuffer.append(' ');
-                                    String[] characterList = (morseCodeBuffer.toString().length() >= 6) ? morseCodeBuffer.toString().substring(6).split(" ") : new String[0];
-                                    List<String> decodedCharacterList = new ArrayList<>();
-                                    for (String character : characterList) {
-                                        if (character.contains("_")) decodedCharacterList.add(" ");
-                                        decodedCharacterList.add(decodeMorseCode(character.replaceAll("_", " ")));
-                                    }
-                                    if (decodedCharacterList.size() > 4) {
-                                        String message = String.join("", decodedCharacterList);
-                                        databaseHelper.insertMessage(message, false);
-                                    }
-                                    labelField.setText(String.join("", decodedCharacterList));
-                                }
-                            }
-                        }
-                    }
-                    if (morseCodeBuffer.toString().length() == 1) prevTime = currentTime;
-                    flashlightOnFrameCount = 0;
-                    isFlashlightOn = false;
+                    handleNotReceiving();
                 }
 
                 if (prevTime == 0) {
@@ -137,28 +88,98 @@ public class Receiver extends CameraActivity {
                 }
 
                 if (!isFlashlightOn) {
-                    // Decode Morse code
-                    String morseCode = morseCodeBuffer.toString().trim();
-                    Log.d(morseCode, "morseCode: " + morseCode);
-                    if (morseCode.endsWith(" .-.-")) {
-                        if (morseCode.contains("-.-.-")) {
-                            morseCode = morseCode.substring(6, morseCode.length() - 5);
-                            morseCodeSequence = Arrays.asList(morseCode.split("_"));
-                            for (String morseCodeWord : morseCodeSequence) {
-                                wordSequence.add(decodeMorseCode(morseCodeWord));
-                            }
-                            Log.d(wordSequence.toString(), "wordList: " + wordSequence.toString());
-                            String message = String.join(" ", wordSequence);
-                            databaseHelper.insertMessage(message, false);
-                            labelField.setText(message);
-                        }
-                        morseCodeBuffer.setLength(0);
-                        wordSequence = new ArrayList<>();
-                        morseCodeSequence = new ArrayList<>();
-                        prevTime = 0;
-                    }
+                    decodeMorseCodeLightOff();
                 }
                 return inputFrame.rgba();
+            }
+
+            boolean isReceivingLight() {
+                boolean isReceiving = false;
+                for (MatOfPoint contour : contours) {
+                    double area = contourArea(contour);
+                    if (area > CONTOUR_AREA) {
+                        isReceiving = true;
+                    }
+                }
+                return isReceiving;
+            }
+            void handleNotReceiving() {
+                if(isFlashlightOn) {
+                    handleFlashlightOn();
+                } else {
+                    handleFlashLightOff();
+                }
+                if (morseCodeBuffer.toString().length() == 1) prevTime = currentTime;
+                flashlightOnFrameCount = 0;
+                isFlashlightOn = false;
+            }
+
+            public void handleIsReceiving() {
+                flashlightOnFrameCount++;
+                isFlashlightOn = true;
+                flashlightOffFrameCount = 0;
+                blankFrameCount = 0;
+            }
+
+            void handleFlashlightOn() {
+                Log.d(flashlightOnFrameCount + "", "illuminatedFrameCount: " + flashlightOnFrameCount);
+                if (flashlightOnFrameCount >= DASH_FRAME_COUNT) {
+                    morseCodeBuffer.append(DASH);
+                }
+                else if (flashlightOnFrameCount >= DOT_FRAME_COUNT) {
+                    morseCodeBuffer.append(DOT);
+                }
+                else morseCodeBuffer.append("");
+            }
+
+            void handleFlashLightOff() {
+                if (!morseCodeBuffer.toString().equals("")) {
+                    flashlightOffFrameCount++;
+                    if (flashlightOffFrameCount >= 8) {
+                        blankFrameCount++;
+                        if (blankFrameCount >= 26) {
+                            morseCodeBuffer.append('_');
+                            blankFrameCount = 0;
+                        }
+                        else if (blankFrameCount == 1 && !morseCodeBuffer.toString().endsWith("_")) {
+                            morseCodeBuffer.append(' ');
+                            String[] characterList = (morseCodeBuffer.toString().length() >= 6) ? morseCodeBuffer.substring(6).split(" ") : new String[0];
+                            List<String> decodedCharacterList = new ArrayList<>();
+                            for (String character : characterList) {
+                                if (character.contains("_")) decodedCharacterList.add(" ");
+                                decodedCharacterList.add(decodeMorseCode(character.replaceAll("_", " ")));
+                            }
+                            if (decodedCharacterList.size() > 4) {
+                                String message = String.join("", decodedCharacterList);
+                                databaseHelper.insertMessage(message, false);
+                            }
+                            labelField.setText(String.join("", decodedCharacterList));
+                        }
+                    }
+                }
+            }
+
+            void decodeMorseCodeLightOff() {
+                // Decode Morse code
+                String morseCode = morseCodeBuffer.toString().trim();
+                Log.d(morseCode, "morseCode: " + morseCode);
+                if (morseCode.endsWith(ENDING_MORSE_CODE)) {
+                    List<String> morseCodeSequence;
+                    if (morseCode.contains("-.-.-")) {
+                        morseCode = morseCode.substring(6, morseCode.length() - 5);
+                        morseCodeSequence = Arrays.asList(morseCode.split("_"));
+                        for (String morseCodeWord : morseCodeSequence) {
+                            wordSequence.add(decodeMorseCode(morseCodeWord));
+                        }
+                        Log.d(wordSequence.toString(), "wordList: " + wordSequence.toString());
+                        String message = String.join(" ", wordSequence);
+                        databaseHelper.insertMessage(message, false);
+                        labelField.setText(message);
+                    }
+                    morseCodeBuffer.setLength(0);
+                    wordSequence = new ArrayList<>();
+                    prevTime = 0;
+                }
             }
         });
 
@@ -169,6 +190,8 @@ public class Receiver extends CameraActivity {
             System.out.println("OpenCV not loaded");
         }
     }
+
+
 
     // Decode Morse code
     private String decodeMorseCode(String morseCode) {
